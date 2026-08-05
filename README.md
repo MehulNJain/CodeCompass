@@ -21,13 +21,32 @@ pushed to a background worker that runs the same code.
 Browser (React SPA)
       |  REST  /api/v1/*
       v
-FastAPI application  ──enqueue──>  Worker process
-      |                                  |
-      +──────── app/modules/ ────────────+   (shared analysis pipeline)
+FastAPI application  ──Redis──>  Celery worker
+      |                              |
+      +──────── app/modules/ ────────+   (shared analysis pipeline)
       |
       v
-PostgreSQL  |  Vector store  |  Object/file storage
+PostgreSQL  |  Neo4j  |  Chroma  |  Object/file storage
+ metadata     graph     vectors    repo snapshots, exports
 ```
+
+## Technology stack
+
+As presented. Nothing below is installed yet apart from React and Tailwind.
+
+| Layer | Stack |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4, React Flow |
+| Backend / API | Python, FastAPI, Celery + Redis |
+| Analysis engine | Tree-sitter (structural parsing), NetworkX (graph + centrality) |
+| Semantic layer | sentence-transformers (code embeddings), LLM behind a model-agnostic interface |
+| Storage | PostgreSQL, Neo4j, Chroma, object storage |
+| Tooling | Git, Docker |
+
+**NetworkX and Neo4j are not alternatives here.** NetworkX builds the graph in
+memory and computes centrality during analysis (`app/modules/graph/`,
+`app/modules/ranking/`); Neo4j persists the result and serves it back for
+queries and the frontend graph view (`app/db/graph/`).
 
 ---
 
@@ -41,11 +60,17 @@ CodeCompass/
 │   │   │   ├── routes/             HTTP endpoints (repositories, tours, graph, qa, jobs)
 │   │   │   └── dependencies/       Shared FastAPI dependencies (db session, auth, pagination)
 │   │   ├── core/                   Config, settings, logging, exceptions, constants
-│   │   ├── db/
-│   │   │   ├── models/             ORM models — repositories, files, graph_edges,
-│   │   │   │                       tours, tour_steps, analysis_jobs (see doc §13)
-│   │   │   ├── repositories/       Data-access layer; queries live here, not in routes
-│   │   │   └── migrations/         Alembic migration environment + versions/
+│   │   ├── db/                     Storage layer — one folder per store
+│   │   │   ├── relational/         PostgreSQL
+│   │   │   │   ├── models/         ORM models — repositories, files, tours,
+│   │   │   │   │                   tour_steps, analysis_jobs (see doc §13)
+│   │   │   │   ├── repositories/   Data-access layer; queries live here, not in routes
+│   │   │   │   └── migrations/     Alembic migration environment + versions/
+│   │   │   ├── graph/              Neo4j — persisted dependency/call graph
+│   │   │   │   ├── queries/        Cypher queries
+│   │   │   │   └── schema/         Constraints and indexes
+│   │   │   └── vector/             Chroma — code embeddings
+│   │   │       └── collections/    Collection definitions
 │   │   ├── schemas/                Pydantic request/response models (the API contract)
 │   │   ├── services/               Orchestration — composes modules into use cases
 │   │   ├── modules/                The analysis pipeline (doc §10, M1–M7)
@@ -133,6 +158,15 @@ without two people editing the same files.
 | M8 API / orchestration | `backend/app/api/`, `services/`, `workers/` | all |
 | M9 Frontend | `frontend/src/` | M8 |
 
+Ownership as presented:
+
+| Area | Owners | Modules |
+|---|---|---|
+| Frontend & backend development | Sanket Kale, Mehul Jain | M8, M9 |
+| Code analysis & AI | Deep Lokhande, Palak Mantage | M1–M7 |
+| Database & system integration | Harshal Kala, Palak Mantage | `db/`, `workers/`, `modules/export/` |
+| Testing & deployment | All members | `tests/`, `docker/` |
+
 ---
 
 ## Conventions
@@ -143,7 +177,9 @@ without two people editing the same files.
 - **Modules do not import each other's internals.** They communicate through
   `services/`, which orchestrates the pipeline.
 - **Routes stay thin.** Endpoints validate input and delegate to `services/`;
-  database queries live in `db/repositories/`.
+  database access lives in `db/`, never in a route.
+- **`modules/` never talks to a database directly.** Analysis modules work on
+  in-memory structures; `services/` persists their output through `db/`.
 - **Frontend features are self-contained.** Put a component in
   `components/` only once a second feature needs it.
 - `@/` is an import alias for `frontend/src/`.
@@ -167,14 +203,18 @@ point, dependency file, or database configuration. Whoever picks up **M8** shoul
 add the FastAPI app, dependency management, and Alembic setup first, then update
 this section.
 
-### Suggested (not yet installed) dependencies
+### Not yet installed
 
-Decide as a team before adding, and record the choice in `docs/decisions/`.
+The presented stack is settled — these still need to be added to the project:
 
-- **Frontend:** a router, a data-fetching layer, and a graph-rendering library
-  with automatic layout for the dependency-graph view.
-- **Backend:** FastAPI, a language-aware structural parser, a graph library for
-  centrality, an ORM + Alembic, and a job queue.
+- **Frontend:** `reactflow`, a router, and a data-fetching layer.
+- **Backend:** `fastapi`, `celery`, `redis`, `tree-sitter` (+ per-language
+  grammars), `networkx`, `sqlalchemy` + `alembic`, `neo4j`, `chromadb`,
+  `sentence-transformers`.
+- **Services:** PostgreSQL, Redis, Neo4j, and Chroma need `docker/` compose
+  entries so the team can run the same environment.
+
+Record any deviation from the presented stack in `docs/decisions/`.
 
 ---
 
