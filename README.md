@@ -141,34 +141,6 @@ CodeCompass/
 
 ---
 
-## Work split
-
-Directories map to the modules in the documentation, so tasks can be assigned
-without two people editing the same files.
-
-| Module | Directory | Depends on |
-|---|---|---|
-| M1 Ingestion | `backend/app/modules/ingestion/` | — |
-| M2 Parsing | `backend/app/modules/parsing/` | M1 |
-| M3 Graph | `backend/app/modules/graph/` | M2 |
-| M4 Ranking | `backend/app/modules/ranking/` | M3 |
-| M5 Tour generation | `backend/app/modules/tour/` | M3, M4 |
-| M6 Semantic layer | `backend/app/modules/semantic/` | M2, M5 |
-| M7 Staleness / incremental | `backend/app/modules/staleness/` | M1, M6 |
-| M8 API / orchestration | `backend/app/api/`, `services/`, `workers/` | all |
-| M9 Frontend | `frontend/src/` | M8 |
-
-Ownership as presented:
-
-| Area | Owners | Modules |
-|---|---|---|
-| Frontend & backend development | Sanket Kale, Mehul Jain | M8, M9 |
-| Code analysis & AI | Deep Lokhande, Palak Mantage | M1–M7 |
-| Database & system integration | Harshal Kala, Palak Mantage | `db/`, `workers/`, `modules/export/` |
-| Testing & deployment | All members | `tests/`, `docker/` |
-
----
-
 ## Conventions
 
 - **The design invariant holds in the code layout.** Structure comes only from
