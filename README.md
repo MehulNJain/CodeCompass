@@ -2,9 +2,10 @@
 
 > A Guided Codebase Onboarding Tour Generator — B.Tech (CSE) Final Year Major Project.
 
-**This repository is a scaffold.** It contains the agreed folder structure and a
-working React application shell. **No features are implemented yet.** Every
-directory is a placeholder waiting for the module it is named after.
+**Status: scaffold plus the public landing page.** The folder structure is
+agreed and in place, and the marketing landing page is built. **No analysis
+features are implemented yet** — the backend has no entry point, and every
+`modules/` directory is still a placeholder waiting for its module.
 
 Full specification: [CodeCompass_Project_Documentation.md](CodeCompass_Project_Documentation.md)
 
@@ -32,7 +33,9 @@ PostgreSQL  |  Neo4j  |  Chroma  |  Object/file storage
 
 ## Technology stack
 
-As presented. Nothing below is installed yet apart from React and Tailwind.
+As presented. On the frontend, React, TypeScript, Vite, Tailwind,
+`react-router-dom`, and `lucide-react` are installed; React Flow is not. Nothing
+on the backend is installed yet.
 
 | Layer | Stack |
 |---|---|
@@ -108,6 +111,7 @@ CodeCompass/
 │   │   │   ├── layout/             Shell, sidebar, header
 │   │   │   └── common/             Shared composites (EmptyState, ErrorBoundary, …)
 │   │   ├── features/               One folder per product surface; owns its own state
+│   │   │   ├── landing/            Public marketing page sections
 │   │   │   ├── repositories/       Submit a repo, list/manage analysed repos
 │   │   │   ├── tour/               The guided ordered tour view (F5, F6)
 │   │   │   ├── graph/              Interactive dependency-graph view (F7)
@@ -123,6 +127,11 @@ CodeCompass/
 │   │   ├── constants/              Enums, config, persona lists
 │   │   └── utils/                  Pure helper functions
 │   └── index.css                   Tailwind entry point
+│
+├── design-system/
+│   └── codecompass/
+│       ├── MASTER.md               Global design tokens — read before styling
+│       └── pages/                  Per-page overrides (override MASTER.md)
 │
 ├── docs/
 │   ├── architecture/               Diagrams, deeper design notes
@@ -182,6 +191,12 @@ Ownership as presented:
   in-memory structures; `services/` persists their output through `db/`.
 - **Frontend features are self-contained.** Put a component in
   `components/` only once a second feature needs it.
+- **Styling follows `design-system/codecompass/`.** Read `MASTER.md` before
+  writing CSS, and check `pages/<page>.md` — a page override beats the master.
+  Use the theme tokens from `frontend/src/index.css` (`bg-canvas`, `text-ink`,
+  `text-accent`, …), never raw hex in a component.
+- **Icons are SVG, never emoji.** Use `lucide-react`; inline the official
+  artwork for brand marks.
 - `@/` is an import alias for `frontend/src/`.
 
 ---
@@ -207,7 +222,8 @@ this section.
 
 The presented stack is settled — these still need to be added to the project:
 
-- **Frontend:** `reactflow`, a router, and a data-fetching layer.
+- **Frontend:** `reactflow` and a data-fetching layer.
+  (`react-router-dom` and `lucide-react` are installed.)
 - **Backend:** `fastapi`, `celery`, `redis`, `tree-sitter` (+ per-language
   grammars), `networkx`, `sqlalchemy` + `alembic`, `neo4j`, `chromadb`,
   `sentence-transformers`.

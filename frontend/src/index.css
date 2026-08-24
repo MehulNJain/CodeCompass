@@ -1,1 +1,89 @@
 @import 'tailwindcss';
+
+/*
+ * CodeCompass design tokens.
+ * Source of truth: design-system/codecompass/MASTER.md
+ *
+ * Two deliberate deviations from MASTER.md:
+ *
+ * 1. Surfaces are true neutral black (#000 base), not the slate ramp
+ *    (#0F172A / #1E293B) the master file lists. The slate carried a visible
+ *    blue cast. The style category itself calls for "deep black", so this is
+ *    closer to the intent, and it is the correct choice for OLED panels.
+ *
+ * 2. The master file specifies white text on the green accent. White on
+ *    #22C55E is 2.26:1 and fails WCAG AA. Black on the same green is 9.3:1,
+ *    so accent buttons use dark text.
+ *
+ * Verified contrast: ink 20.1:1, ink-muted 8.3:1, ink-faint 5.4:1,
+ * accent 9.2:1 (all on #000). ink-faint also clears 4.5:1 on the lightest
+ * surface (#181818). line-strong is 3.04:1 on #000, meeting WCAG 1.4.11
+ * for interactive borders — inputs and outline buttons use it.
+ */
+@theme {
+  /* Surfaces, darkest to lightest. True black base — no blue cast. */
+  --color-canvas: #000000;
+  --color-surface: #101010;
+  --color-surface-2: #181818;
+  --color-elevated: #262626;
+
+  /* Text — neutral greys, deliberately not slate */
+  --color-ink: #fafafa;
+  --color-ink-muted: #a3a3a3;
+  --color-ink-faint: #818181;
+
+  /* Lines */
+  --color-line: #242424;
+  --color-line-strong: #5a5a5a;
+
+  /* Accent — "code dark + run green" */
+  --color-accent: #22c55e;
+  --color-accent-hover: #16a34a;
+  --color-accent-dim: #14532d;
+
+  --color-danger: #ef4444;
+
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Offset anchor targets so the sticky header doesn't cover section headings. */
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Never remove the focus ring — replace it with a visible one. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-canvas);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
