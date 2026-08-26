@@ -1,0 +1,28 @@
+# API and worker share one image — they run the same code, only the command
+# differs. See docker/docker-compose.yml.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# git is a runtime dependency, not a build one: module M1 clones repositories.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Requirements first so a code change does not invalidate the dependency layer.
+COPY backend/requirements.txt backend/requirements-dev.txt ./
+RUN pip install --upgrade pip && pip install -r requirements-dev.txt
+
+COPY backend/ .
+
+# The analysis libraries (tree-sitter, networkx, sentence-transformers) are
+# deliberately NOT installed here — torch alone would add gigabytes. Add
+# `-r requirements-analysis.txt` above once modules M1–M7 need them.
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

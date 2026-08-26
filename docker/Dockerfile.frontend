@@ -1,0 +1,24 @@
+# Development image for the Vite dev server.
+#
+# This is NOT a production build — it runs `vite dev` with hot reload against
+# the source mounted from your working tree. A production image would be a
+# `npm run build` into an nginx stage; add that when there is somewhere to
+# deploy to.
+FROM node:24-alpine
+
+# NODE_ENV is deliberately NOT set. Setting it to `development` here made
+# `npm run build` inside this container emit a development React bundle —
+# 537 kB against 313 kB — because dependencies branch on it. npm installs
+# devDependencies by default anyway, so nothing needed it.
+
+WORKDIR /app
+
+# Lockfile first, so a source change does not reinstall every dependency.
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
