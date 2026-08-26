@@ -53,7 +53,7 @@ export function SiteHeader() {
           <ButtonLink to="/login" variant="ghost">
             Sign in
           </ButtonLink>
-          <ButtonLink to="/login">Get started</ButtonLink>
+          <ButtonLink to="/signup">Get started</ButtonLink>
         </div>
 
         <Button
@@ -93,7 +93,7 @@ export function SiteHeader() {
             <ButtonLink to="/login" variant="outline">
               Sign in
             </ButtonLink>
-            <ButtonLink to="/login">Get started</ButtonLink>
+            <ButtonLink to="/signup">Get started</ButtonLink>
           </div>
         </div>
       )}

@@ -27,7 +27,7 @@ export function FinalCta() {
               With GitHub
             </ButtonLink>
             <ButtonLink
-              to="/login"
+              to="/signup"
               variant="outline"
               size="lg"
               className="border-line-strong bg-canvas hover:bg-surface"

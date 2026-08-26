@@ -72,7 +72,7 @@ panels.
 | Text muted | `#94A3B8` | **`#A3A3A3`** |
 | Text faint | `#64748B` | **`#818181`** |
 | Hairline | — | **`#242424`** |
-| Interactive border | `#475569` | **`#5A5A5A`** |
+| Interactive border | `#475569` | **`#666666`** |
 
 The accent (`#22C55E`) is unchanged.
 
@@ -110,12 +110,21 @@ Implemented in `frontend/src/components/ui/Button.tsx` (`variants.accent`).
 | `ink-faint` `#818181` on `#181818` | 4.56:1 | AA pass (worst case) |
 | `accent` `#22C55E` on `#000` | 9.22:1 | AA pass |
 | `canvas` on `accent` | 9.22:1 | AA pass |
-| `line-strong` `#5A5A5A` on `#000` | 3.04:1 | 1.4.11 pass |
+| `danger` `#EF4444` on `#000` | 5.58:1 | AA pass |
+| `danger` `#EF4444` on `#181818` | 4.72:1 | AA pass (worst case) |
+| `line-strong` `#666666` on `#000` | 3.66:1 | 1.4.11 pass |
+| `line-strong` `#666666` on `#101010` | 3.31:1 | 1.4.11 pass |
+| `line-strong` `#666666` on `#181818` | 3.09:1 | 1.4.11 pass (worst case) |
 
 `line-strong` is the border on inputs and outline buttons, so it must clear
 **3:1** under WCAG 1.4.11 (non-text contrast) — `#3F3F3F` measured 1.99:1 and
-was rejected. `ink-faint` was solved against `#181818`, the lightest surface it
-ever sits on, rather than against `#000`.
+was rejected. `#5A5A5A` was then used, but it only cleared 3:1 against `#000`;
+an input filled with `bg-surface` puts that border against `#101010` on its
+inner edge, where it measured **2.76:1**. `#666666` clears 3:1 on canvas,
+surface, and surface-2 alike. It does **not** clear 3:1 on `elevated`
+(`#262626` — 2.64:1), so re-check before putting a bordered control there.
+`ink-faint` was solved against `#181818`, the lightest surface it ever sits on,
+rather than against `#000`.
 
 ### No fabricated social proof
 

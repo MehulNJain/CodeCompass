@@ -15,10 +15,15 @@
  *    #22C55E is 2.26:1 and fails WCAG AA. Black on the same green is 9.3:1,
  *    so accent buttons use dark text.
  *
- * Verified contrast: ink 20.1:1, ink-muted 8.3:1, ink-faint 5.4:1,
- * accent 9.2:1 (all on #000). ink-faint also clears 4.5:1 on the lightest
- * surface (#181818). line-strong is 3.04:1 on #000, meeting WCAG 1.4.11
- * for interactive borders — inputs and outline buttons use it.
+ * Verified contrast on #000: ink 20.1:1, ink-muted 8.3:1, ink-faint 5.4:1,
+ * accent 9.2:1, danger 5.6:1. ink-faint and danger both still clear 4.5:1 on
+ * the lightest surface text sits on (#181818).
+ *
+ * line-strong is the border on inputs and outline buttons, so it answers to
+ * WCAG 1.4.11 (3:1) rather than 4.5:1 — and it has to clear that against the
+ * fill on BOTH sides. At #666666 it is 3.66:1 on canvas, 3.31:1 on surface,
+ * 3.09:1 on surface-2. It does NOT clear 3:1 on elevated (#262626), so do not
+ * put a bordered control on that surface without re-checking.
  */
 @theme {
   /* Surfaces, darkest to lightest. True black base — no blue cast. */
@@ -34,7 +39,7 @@
 
   /* Lines */
   --color-line: #242424;
-  --color-line-strong: #5a5a5a;
+  --color-line-strong: #666666;
 
   /* Accent — "code dark + run green" */
   --color-accent: #22c55e;

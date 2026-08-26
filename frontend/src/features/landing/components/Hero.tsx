@@ -15,10 +15,10 @@ export function Hero() {
   const [repoUrl, setRepoUrl] = useState('')
   const navigate = useNavigate()
 
-  // No backend yet — a submit sends the visitor into the sign-in flow.
+  // No backend yet — a submit sends the visitor into the sign-up flow.
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    navigate('/login')
+    navigate('/signup')
   }
 
   return (
