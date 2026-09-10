@@ -1,0 +1,25 @@
+# Tool configuration only. Dependencies live in requirements*.txt so that
+# `pip install -r` works without anyone needing Poetry or uv installed.
+
+[project]
+name = "codecompass"
+version = "0.1.0"
+description = "A guided codebase onboarding tour generator."
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+# Alembic generates these; reformatting them by hand only causes merge noise.
+extend-exclude = ["app/db/relational/migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

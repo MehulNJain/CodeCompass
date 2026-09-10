@@ -1,0 +1,30 @@
+# Runtime dependencies for the API and the worker.
+#
+# The analysis libraries (tree-sitter, networkx, sentence-transformers) are NOT
+# here — they live in requirements-analysis.txt so the API image stays small
+# until modules M1–M7 need them. See that file before starting M2.
+
+# --- Web layer ---
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.32,<1.0
+pydantic>=2.9,<3.0
+pydantic-settings>=2.6,<3.0
+
+# --- Relational store: PostgreSQL ---
+# psycopg 3 — matches the postgresql+psycopg:// URL in .env.example.
+sqlalchemy>=2.0,<3.0
+psycopg[binary]>=3.2,<4.0
+alembic>=1.14,<2.0
+
+# --- Background jobs ---
+celery>=5.4,<6.0
+redis>=5.2,<7.0
+
+# --- Graph store ---
+neo4j>=5.26,<7.0
+
+# --- Vector store ---
+chromadb>=0.5,<2.0
+
+# --- Repository ingestion ---
+GitPython>=3.1,<4.0

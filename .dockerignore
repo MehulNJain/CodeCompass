@@ -1,0 +1,29 @@
+# The build context is the repository root (both images are built from `..`),
+# so everything heavy has to be excluded here or every build ships it to the
+# daemon.
+
+.git/
+.github/
+
+# Dependencies are installed inside the image, never copied from the host —
+# node_modules holds platform-specific binaries (esbuild, rollup) built for
+# macOS that would not run on Linux.
+frontend/node_modules/
+frontend/dist/
+**/__pycache__/
+**/*.pyc
+backend/.venv/
+backend/.pytest_cache/
+backend/.ruff_cache/
+
+# Runtime working data
+backend/storage/repos/*
+backend/storage/exports/*
+
+# Local secrets — the compose file mounts .env explicitly where it is needed
+.env
+
+# Documents and design notes are not needed to build anything
+*.pptx
+docs/
+design-system/

@@ -1,0 +1,148 @@
+# The whole project — frontend, API, worker, and all four data stores — in one
+# command:
+#
+#     docker compose -f docker/docker-compose.yml up -d
+#
+# Then open http://localhost:5173. Nothing else to install, no `cd frontend`,
+# no separate `npm run dev`. Migrations run automatically when the API starts.
+#
+# Your working tree is mounted into the containers, so editing a file reloads
+# it — React through Vite HMR, the API through uvicorn --reload.
+#
+# The ports are published on localhost as well, so you can still run the API or
+# the frontend directly on your machine against these containers if you prefer.
+
+name: codecompass
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: codecompass
+      POSTGRES_PASSWORD: codecompass
+      POSTGRES_DB: codecompass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codecompass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/codecompass
+      NEO4J_server_memory_heap_max__size: 512M
+    ports:
+      - "7474:7474"   # browser
+      - "7687:7687"   # bolt
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  chroma:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"   # 8001 on the host — 8000 belongs to the API
+    volumes:
+      - chroma_data:/data
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    # Migrations run here, not in a separate step — bringing the stack up
+    # should leave the database at the right schema with no follow-up command.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    environment: &backend_env
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://codecompass:codecompass@postgres:5432/codecompass
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: codecompass
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+      CORS_ORIGINS: http://localhost:5173
+    env_file:
+      # Only for values that are genuinely secret — the LLM key. Optional, so
+      # the stack starts before anyone has one.
+      - path: ../.env
+        required: false
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app          # live reload against your working tree
+      - repo_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    command: celery -A app.workers.celery_app.celery_app worker --loglevel=info
+    environment: *backend_env
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - ../backend:/app
+      - repo_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    environment:
+      # Inside the network the API is `api`, not localhost. vite.config.ts
+      # reads this; on the host it falls back to http://localhost:8000.
+      VITE_API_PROXY_TARGET: http://api:8000
+      # Docker Desktop on macOS does not deliver file events through a bind
+      # mount reliably, so Vite polls for changes instead.
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../frontend:/app
+      # Keeps the container's own node_modules. Without this the bind mount
+      # above would hide them behind the host's, whose esbuild and rollup
+      # binaries are built for macOS and will not run on Linux.
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  chroma_data:
+  repo_storage:
+  frontend_node_modules:
