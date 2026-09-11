@@ -7,8 +7,10 @@ paste a Git URL into the dashboard and the API queues a job, Celery hands it to
 a worker, and the row updates itself as the job moves.
 
 **That job then fails on purpose**, because the pipeline it would run does not
-exist. Every `modules/` directory (M1–M7) is still empty, and there is no
-authentication behind the login form.
+exist. Every `modules/` directory (M1–M7) is still empty.
+
+Accounts are real: email and password sign-up and sign-in, with each user seeing
+only the repositories they added. GitHub sign-in is not built yet.
 
 Everything runs in Docker: `docker compose -f docker/docker-compose.yml up -d`,
 then open http://localhost:5173.
@@ -67,16 +69,16 @@ CodeCompass/
 │   ├── app/
 │   │   ├── main.py                 Application factory — `uvicorn app.main:app`
 │   │   ├── api/v1/
-│   │   │   ├── router.py           Mounts every route under /api/v1
-│   │   │   ├── routes/             HTTP endpoints (repositories, tours, graph, qa, jobs)
-│   │   │   └── dependencies/       Shared FastAPI dependencies (db session, pagination)
-│   │   ├── core/                   Config, logging, exceptions, constants
+│   │   │   ├── router.py           Mounts every route under /api/v1; private by default
+│   │   │   ├── routes/             HTTP endpoints (auth, repositories, tours, graph, qa, jobs)
+│   │   │   └── dependencies/       Shared FastAPI dependencies (db session, current user, pagination)
+│   │   ├── core/                   Config, logging, exceptions, constants, security (hashing)
 │   │   ├── db/                     Storage layer — one folder per store
 │   │   │   ├── relational/         PostgreSQL
 │   │   │   │   ├── base.py         Declarative base + constraint naming
 │   │   │   │   ├── session.py      Engine and session factory (API and worker share it)
-│   │   │   │   ├── models/         ORM models — repositories, files, tours,
-│   │   │   │   │                   tour_steps, analysis_jobs (see doc §13)
+│   │   │   │   ├── models/         ORM models — users, user_sessions, repositories,
+│   │   │   │   │                   files, tours, tour_steps, analysis_jobs (doc §13)
 │   │   │   │   ├── repositories/   Data-access layer; queries live here, not in routes
 │   │   │   │   └── migrations/     Alembic migration environment + versions/
 │   │   │   ├── graph/              Neo4j — persisted dependency/call graph
@@ -106,8 +108,8 @@ CodeCompass/
 │   │   │   └── tasks/              Individual async tasks (analyse_repository, reanalyse, …)
 │   │   └── utils/                  Small generic helpers with no domain knowledge
 │   ├── tests/
-│   │   ├── unit/                   Per-module tests against hand-verified samples
-│   │   ├── integration/            Full-pipeline runs
+│   │   ├── unit/                   No services needed — run anywhere
+│   │   ├── integration/            Against real Postgres, in its own `_test` database
 │   │   └── fixtures/sample_repos/  Tiny repos with known structure, for accuracy checks
 │   ├── storage/                    Runtime working data (gitignored)
 │   │   ├── repos/                  Cloned repository snapshots
@@ -122,6 +124,7 @@ CodeCompass/
 │   ├── src/
 │   │   ├── api/                    Typed HTTP client + endpoint wrappers
 │   │   │   ├── client.ts           fetch wrapper, ApiError — the only network code
+│   │   │   ├── auth.ts             /auth endpoints (session is an httpOnly cookie)
 │   │   │   └── repositories.ts     /repositories endpoints
 │   │   ├── assets/                 Images, icons, fonts
 │   │   ├── components/
@@ -130,7 +133,7 @@ CodeCompass/
 │   │   │   └── common/             EmptyState, ErrorState, Skeleton
 │   │   ├── features/               One folder per product surface; owns its own state
 │   │   │   ├── landing/            Public marketing page sections
-│   │   │   ├── auth/               Sign-in / sign-up form and its side panel
+│   │   │   ├── auth/               Sign-in / sign-up form, session hooks (useAuth)
 │   │   │   ├── repositories/       Submit a repo, list/manage analysed repos
 │   │   │   │   ├── components/     Form, list, row, status badge, job detail
 │   │   │   │   └── hooks/          TanStack Query hooks (list, submit, poll job)
@@ -141,7 +144,7 @@ CodeCompass/
 │   │   ├── hooks/                  App-wide reusable hooks
 │   │   ├── lib/                    Third-party setup (http client, query client, graph lib)
 │   │   ├── pages/                  Route-level page components
-│   │   ├── routes/                 Router definition and route guards
+│   │   ├── routes/                 Router definition and route guards (RequireAuth)
 │   │   ├── store/                  Global client state
 │   │   ├── styles/                 Tailwind theme extensions, global CSS
 │   │   ├── types/                  Shared TypeScript types (mirror backend schemas)
@@ -192,7 +195,7 @@ without two people editing the same files.
 | M5 Tour generation | `backend/app/modules/tour/` | M3, M4 | empty |
 | M6 Semantic layer | `backend/app/modules/semantic/` | M2, M5 | empty |
 | M7 Staleness / incremental | `backend/app/modules/staleness/` | M1, M6 | empty |
-| M8 API / orchestration | `backend/app/api/`, `services/`, `workers/` | all | foundation runs |
+| M8 API / orchestration | `backend/app/api/`, `services/`, `workers/` | all | foundation runs, email auth |
 | M9 Frontend | `frontend/src/` | M8 | landing, auth, dashboard |
 
 **M1 is the unblocking task.** Everything downstream waits on a file inventory,
@@ -227,6 +230,14 @@ Ownership as presented:
 - **An unbuilt endpoint answers 501, not 404.** A 404 tells the frontend the URL
   is wrong; 501 tells it the route is real and the module is coming. Use
   `NotImplementedYetError` and name the module in the message.
+- **Routes are private by default.** Mount a new router inside `private` in
+  `app/api/v1/router.py`. A route that answers without a session fails
+  `tests/unit/test_route_protection.py` unless it is added to that test's
+  allowlist on purpose.
+- **Signed in is not the same as allowed.** Look repositories and jobs up
+  through the `owner_id`-scoped functions (`repository_service.get_repository`,
+  `repository_repo.get_owned`), never by bare id. Someone else's id answers 404,
+  not 403 — a 403 confirms the thing exists.
 - **Nothing reads `os.environ`.** Import `settings` from `app/core/config.py`.
 - **After changing a model, generate a migration** in the same commit:
   `alembic revision --autogenerate -m "..."`. A model without a migration breaks
@@ -307,7 +318,7 @@ $C build api worker && $C up -d api worker
 ```bash
 C="docker compose -f docker/docker-compose.yml"
 
-$C exec api pytest                                    # backend tests
+$C exec api pytest                                    # backend tests (unit + integration)
 $C exec api ruff check .                              # backend lint
 $C exec frontend npm run build                        # typecheck + build
 $C exec frontend npx oxlint src                       # frontend lint

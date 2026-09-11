@@ -40,6 +40,15 @@ Unbuilt sections (Tours, Graph, Ask) render as `aria-disabled` spans with a
 `SOON` marker, **not** as links. A nav item that navigates to a 501 is worse
 than one that visibly is not ready yet.
 
+**Account block.** The bottom of the sidebar shows the user's name and email
+(both `truncate`d — emails are long) above a **Sign out** button. Below `lg` the
+same block sits at the end of the disclosure panel; without that there would be
+no way to sign out on a phone. Sign-out only takes effect once the server
+confirms it — if the request fails, the button says so instead of pretending.
+
+The whole shell renders only under `RequireAuth`. Signed-out visitors are sent
+to `/login` and come back to the page they asked for after signing in.
+
 ## Status must not rely on colour
 
 Every `RepositoryStatus` renders as icon + word + border colour together

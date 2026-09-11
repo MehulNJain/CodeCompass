@@ -44,6 +44,10 @@ on this screen the repositories they want analysed are already on GitHub, so it
 is the likely path. The landing page keeps them equal because it is still
 making the pitch.
 
+Until GitHub sign-in exists, that button is **`disabled` with a `SOON` marker**
+— the same treatment as unbuilt sidebar items on the dashboard. A button that
+looks live and does nothing is worse than one that is visibly not ready.
+
 ## Form rules
 
 - **Labels are always visible.** Placeholder-only labelling is forbidden — the
@@ -58,14 +62,28 @@ making the pitch.
   untranslatable, and disappear on blur.
 - Error text uses `text-danger` (`#EF4444`), measured 5.58:1 on `#000` and
   4.72:1 on `#181818`.
+- **Server errors follow the same rule where they can.** A taken email (409)
+  is shown under the email field and focuses it. Errors that belong to no one
+  field — wrong credentials, API unreachable — render once, directly above the
+  submit button, with `role="alert"`. Editing any field clears that message,
+  because it described the old values.
+- **Wrong password and unknown email read identically** ("Incorrect email or
+  password."). Do not split them into friendlier messages — that turns the form
+  into a way to test which emails have accounts.
+- While the request is in flight the submit button is disabled and says
+  "Signing in…" / "Creating account…".
 
-## Known placeholder
+## Session behaviour
 
-There is **no authentication backend yet** (module M8). Both the GitHub button
-and a valid form submit call `navigate('/dashboard')` so the flow is walkable.
-The real OAuth redirect and the real credential POST replace those two calls —
-they are marked with comments in `features/auth/components/AuthForm.tsx`.
-`/dashboard` is itself a placeholder page.
+- A successful submit does **not** navigate by itself. It stores the user in
+  the query cache, and `RedirectIfSignedIn` (`routes/guards.tsx`) moves them to
+  where they were sent from, or `/dashboard`.
+- A signed-in user who opens `/login` or `/signup` is redirected straight on.
+- `AuthForm` is keyed by `mode`, so switching between the two screens starts a
+  clean form.
 
-`/login`'s "Forgot password?" link currently points back at `/login`. It needs a
-real route once password reset exists.
+## Not built
+
+- **Password reset.** It needs outgoing email. The "Forgot password?" link was
+  removed rather than left pointing back at `/login`.
+- **GitHub sign-in** — see "Method order" above.
