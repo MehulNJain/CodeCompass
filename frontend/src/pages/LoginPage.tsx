@@ -31,7 +31,10 @@ export default function LoginPage({ mode = 'signin' }: { mode?: AuthMode }) {
         </div>
 
         <div className="flex flex-1 items-center justify-center py-12">
-          <AuthForm mode={mode} />
+          {/* Keyed by mode: /login and /signup share this component, and
+              without a key React keeps half-typed values and errors across
+              the switch. */}
+          <AuthForm key={mode} mode={mode} />
         </div>
 
         <p className="text-center font-mono text-xs text-ink-faint">

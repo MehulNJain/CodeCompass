@@ -13,8 +13,9 @@ export default function DashboardPage() {
             Repositories
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            Submit a public Git URL. Analysis runs in the background — the row
-            updates itself while the worker moves through the pipeline.
+            Submit a public Git URL. Only you can see the repositories you add.
+            Analysis runs in the background — the row updates itself while the
+            worker moves through the pipeline.
           </p>
         </header>
 

@@ -49,3 +49,23 @@ export interface RepositoryCreate {
   source_url: string
   default_branch?: string
 }
+
+/* --- Authentication — backend/app/schemas/auth.py --- */
+
+export interface User {
+  id: number
+  email: string
+  name: string
+  created_at: string
+}
+
+export interface SignUpRequest {
+  name: string
+  email: string
+  password: string
+}
+
+export interface SignInRequest {
+  email: string
+  password: string
+}

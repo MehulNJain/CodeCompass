@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useCurrentUser, useSignOut } from '@/features/auth/hooks/useAuth'
 
 type NavItem = {
   label: string
@@ -67,10 +68,41 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+/** Who is signed in, and the way out. Signing out ends the session on the
+ * server; RequireAuth then sends the page back to /login. */
+function Account() {
+  const { data: user } = useCurrentUser()
+  const signOut = useSignOut()
+
+  return (
+    <div className="border-t border-line pt-3">
+      {user && (
+        <div className="min-w-0 px-3 pb-2">
+          <p className="truncate text-sm font-medium text-ink">{user.name}</p>
+          <p className="truncate font-mono text-xs text-ink-faint">{user.email}</p>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => signOut.mutate()}
+        disabled={signOut.isPending}
+        className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-sm text-ink-muted transition-colors duration-200 hover:bg-surface-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <LogOut className="size-4 shrink-0" aria-hidden="true" />
+        {signOut.isPending ? 'Signing out…' : 'Sign out'}
+      </button>
+      {signOut.isError && (
+        <p role="alert" className="px-3 pt-1 text-xs text-danger">
+          Could not sign out. Try again.
+        </p>
+      )}
+    </div>
+  )
+}
+
 /*
  * The signed-in shell: fixed sidebar from `lg`, a slide-down panel below it.
- * There is no session yet, so "Sign out" is just a link back to the landing
- * page — it becomes a real call once authentication exists.
+ * Only ever rendered under RequireAuth, so there is always a user.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -98,13 +130,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavItems />
         </div>
 
-        <Link
-          to="/"
-          className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm text-ink-muted transition-colors duration-200 hover:bg-surface-2 hover:text-ink"
-        >
-          <LogOut className="size-4 shrink-0" aria-hidden="true" />
-          Sign out
-        </Link>
+        <Account />
       </aside>
 
       {/* Top bar — mobile */}
@@ -138,6 +164,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="border-b border-line bg-surface px-3 py-3 lg:hidden"
         >
           <NavItems onNavigate={() => setMenuOpen(false)} />
+          {/* The sidebar is hidden below lg, so the account block lives here
+              too — otherwise there is no way to sign out on a phone. */}
+          <div className="mt-3">
+            <Account />
+          </div>
         </div>
       )}
 
