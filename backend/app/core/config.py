@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # Comma-separated in .env; split in `cors_origin_list`.
     cors_origins: str = "http://localhost:5173"
 
+    # --- Authentication ---
+    session_ttl_days: int = 14
+
     # --- PostgreSQL ---
     database_url: str = (
         "postgresql+psycopg://codecompass:codecompass@localhost:5432/codecompass"
@@ -73,6 +76,12 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.app_env == "development"
+
+    @property
+    def session_cookie_secure(self) -> bool:
+        """HTTPS-only everywhere except local development, which is plain
+        http://localhost."""
+        return not self.is_development
 
 
 @lru_cache

@@ -2,6 +2,9 @@
 
 Routes call into here; this module composes the data-access layer and the job
 queue. It is the only place that knows both exist.
+
+Every function takes the caller's `owner_id`. Someone else's repository is
+reported as not found, never as forbidden — a 403 would confirm it exists.
 """
 
 from urllib.parse import urlparse
@@ -28,18 +31,22 @@ def derive_name(source_url: str) -> str:
 
 
 def submit_repository(
-    session: Session, *, source_url: str, default_branch: str
+    session: Session, *, owner_id: int, source_url: str, default_branch: str
 ) -> tuple[Repository, AnalysisJob]:
     """Register a repository and queue an analysis run.
 
-    Re-submitting a URL that is already known re-queues it rather than creating
-    a duplicate — that is the incremental re-analysis path (F12 / module M7).
+    Re-submitting a URL this user already added re-queues it rather than
+    creating a duplicate — that is the incremental re-analysis path (F12 /
+    module M7). Another user submitting the same URL gets their own row.
     """
-    repository = repository_repo.get_by_source_url(session, source_url)
+    repository = repository_repo.get_by_source_url(
+        session, source_url, owner_id=owner_id
+    )
 
     if repository is None:
         repository = repository_repo.create(
             session,
+            owner_id=owner_id,
             name=derive_name(source_url),
             source_url=source_url,
             default_branch=default_branch,
@@ -67,8 +74,17 @@ def submit_repository(
     return repository, job
 
 
-def get_repository(session: Session, repository_id: int) -> Repository:
-    repository = repository_repo.get_by_id(session, repository_id)
+def get_repository(
+    session: Session, repository_id: int, *, owner_id: int
+) -> Repository:
+    repository = repository_repo.get_owned(session, repository_id, owner_id=owner_id)
     if repository is None:
         raise NotFoundError(f"No repository with id {repository_id}.")
     return repository
+
+
+def get_job(session: Session, job_id: int, *, owner_id: int) -> AnalysisJob:
+    job = repository_repo.get_owned_job(session, job_id, owner_id=owner_id)
+    if job is None:
+        raise NotFoundError(f"No job with id {job_id}.")
+    return job
