@@ -16,6 +16,14 @@ class CodeCompassError(Exception):
         self.message = message or self.message
 
 
+class UnauthorizedError(CodeCompassError):
+    """No valid session. Someone else's resource is a NotFoundError instead —
+    a 403 would confirm the thing exists."""
+
+    status_code = 401
+    message = "Sign in to continue."
+
+
 class NotFoundError(CodeCompassError):
     status_code = 404
     message = "The requested resource does not exist."

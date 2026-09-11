@@ -16,6 +16,10 @@ sqlalchemy>=2.0,<3.0
 psycopg[binary]>=3.2,<4.0
 alembic>=1.14,<2.0
 
+# --- Authentication ---
+argon2-cffi>=25.1,<26.0     # password hashing
+email-validator>=2.2,<3.0   # backs pydantic's EmailStr
+
 # --- Background jobs ---
 celery>=5.4,<6.0
 redis>=5.2,<7.0

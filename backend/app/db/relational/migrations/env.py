@@ -2,7 +2,9 @@
 
 Two things worth knowing:
 
-1. The URL comes from `app.core.config.settings`, not from alembic.ini.
+1. The URL comes from `app.core.config.settings`, not from alembic.ini —
+   unless the caller has already set one, which is how the integration tests
+   migrate their own database.
 2. `app.db.relational.models` is imported for its side effect — autogenerate
    only sees tables whose models have been imported.
 """
@@ -17,7 +19,8 @@ from app.db.relational import models  # noqa: F401  (registers every table)
 from app.db.relational.base import Base
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+database_url = config.get_main_option("sqlalchemy.url") or settings.database_url
+config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -27,7 +30,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.database_url,
+        url=database_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},

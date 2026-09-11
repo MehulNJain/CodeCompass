@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Mail } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { AlertCircle, ArrowRight, Mail } from 'lucide-react'
+import { ApiError } from '@/api/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { GithubMark } from '@/components/ui/GithubMark'
+import { useSignIn, useSignUp } from '@/features/auth/hooks/useAuth'
 
 export type AuthMode = 'signin' | 'signup'
 
@@ -15,6 +17,7 @@ const copy = {
     heading: 'Sign in',
     subheading: 'Pick up the tours you have already generated.',
     submit: 'Sign in',
+    submitting: 'Signing in…',
     github: 'Continue with GitHub',
     switchPrompt: 'No account yet?',
     switchLabel: 'Create one',
@@ -24,6 +27,7 @@ const copy = {
     heading: 'Create an account',
     subheading: 'Point CodeCompass at a repository and get a reading path.',
     submit: 'Create account',
+    submitting: 'Creating account…',
     github: 'Sign up with GitHub',
     switchPrompt: 'Already have an account?',
     switchLabel: 'Sign in',
@@ -31,6 +35,8 @@ const copy = {
   },
 } as const
 
+// Kept in step with backend/app/schemas/auth.py. The server re-checks all of
+// it; this only saves a round trip.
 function validate(mode: AuthMode, values: Fields): Errors {
   const errors: Errors = {}
 
@@ -53,9 +59,13 @@ function validate(mode: AuthMode, values: Fields): Errors {
   return errors
 }
 
+const isConflict = (error: unknown) => error instanceof ApiError && error.status === 409
+
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const text = copy[mode]
-  const navigate = useNavigate()
+  const signIn = useSignIn()
+  const signUp = useSignUp()
+  const request = mode === 'signup' ? signUp : signIn
 
   const [values, setValues] = useState<Fields>({
     name: '',
@@ -71,6 +81,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     const next = { ...values, [field]: event.target.value }
     setValues(next)
     if (submitted) setErrors(validate(mode, next))
+    // The last server answer was about the old values; editing makes it stale.
+    if (request.isError) request.reset()
   }
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -87,10 +99,33 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       return
     }
 
-    // No auth backend yet (module M8). The real call goes here; until then the
-    // form hands off to the dashboard so the flow is walkable end to end.
-    navigate('/dashboard')
+    // Success needs no handler here. The mutation stores the signed-in user,
+    // and RedirectIfSignedIn (routes/guards.tsx) moves them on.
+    if (mode === 'signup') {
+      signUp.mutate(
+        {
+          name: values.name.trim(),
+          email: values.email.trim(),
+          password: values.password,
+        },
+        {
+          onError: (error) => {
+            // A taken email is about one field, so it goes next to that field.
+            if (isConflict(error)) {
+              setErrors({ email: error.message })
+              document.getElementById('email')?.focus()
+            }
+          },
+        },
+      )
+    } else {
+      signIn.mutate({ email: values.email.trim(), password: values.password })
+    }
   }
+
+  // Failures that belong to no single field: wrong credentials, API down.
+  const formError =
+    request.error && !isConflict(request.error) ? request.error.message : null
 
   return (
     <div className="w-full max-w-sm">
@@ -99,16 +134,22 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         {text.subheading}
       </p>
 
-      {/* GitHub first: the repositories being analysed already live there. */}
+      {/*
+        GitHub first: the repositories being analysed already live there. Not
+        wired up yet — it needs a registered GitHub App — so it is visibly
+        unavailable rather than a button that silently does nothing.
+      */}
       <Button
         type="button"
         variant="outline"
         size="lg"
         className="mt-8 w-full"
-        onClick={() => navigate('/dashboard')}
+        disabled
+        title="GitHub sign-in is not built yet"
       >
         <GithubMark />
         {text.github}
+        <span className="font-mono text-[0.625rem] tracking-wide">SOON</span>
       </Button>
 
       <div className="my-6 flex items-center gap-4" aria-hidden="true">
@@ -142,33 +183,33 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           error={errors.email}
         />
 
-        <div>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            label="Password"
-            autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-            value={values.password}
-            onChange={update('password')}
-            error={errors.password}
-            hint={mode === 'signup' ? 'At least 8 characters.' : undefined}
-          />
-          {mode === 'signin' && (
-            <div className="mt-2 text-right">
-              <Link
-                to="/login"
-                className="font-mono text-xs text-ink-faint transition-colors duration-200 hover:text-accent"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          )}
-        </div>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          label="Password"
+          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+          value={values.password}
+          onChange={update('password')}
+          error={errors.password}
+          hint={mode === 'signup' ? 'At least 8 characters.' : undefined}
+        />
 
-        <Button type="submit" size="lg" className="mt-1 w-full">
+        {formError && (
+          <p role="alert" className="flex items-start gap-1.5 text-sm text-danger">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            {formError}
+          </p>
+        )}
+
+        <Button
+          type="submit"
+          size="lg"
+          className="mt-1 w-full"
+          disabled={request.isPending}
+        >
           <Mail className="size-4" aria-hidden="true" />
-          {text.submit}
+          {request.isPending ? text.submitting : text.submit}
           <ArrowRight className="size-4" aria-hidden="true" />
         </Button>
       </form>

@@ -9,6 +9,7 @@ from app.db.relational.models.analysis_job import AnalysisJob
 from app.db.relational.models.file import File, GraphEdge
 from app.db.relational.models.repository import Repository
 from app.db.relational.models.tour import Tour, TourStep
+from app.db.relational.models.user import User, UserSession
 
 __all__ = [
     "AnalysisJob",
@@ -17,4 +18,6 @@ __all__ = [
     "Repository",
     "Tour",
     "TourStep",
+    "User",
+    "UserSession",
 ]
