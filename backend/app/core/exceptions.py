@@ -50,6 +50,14 @@ class NotImplementedYetError(CodeCompassError):
     message = "Not implemented yet."
 
 
+class AnalysisError(CodeCompassError):
+    """The pipeline could not analyse a repository (bad URL, private repo, …).
+    The message is shown to the user on the failed job, so keep it plain."""
+
+    status_code = 422
+    message = "The repository could not be analysed."
+
+
 class ExternalServiceError(CodeCompassError):
     status_code = 502
     message = "A service this depends on is unavailable."
