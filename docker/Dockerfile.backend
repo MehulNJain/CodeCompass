@@ -8,8 +8,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Optional mirrors for networks where deb.debian.org / pypi.org are unreachable:
+#   docker compose -f docker/docker-compose.yml build \
+#     --build-arg APT_MIRROR=https://mirrors.aliyun.com \
+#     --build-arg PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ api worker
+ARG APT_MIRROR=
+ARG PIP_INDEX_URL=https://pypi.org/simple/
+
 # git is a runtime dependency, not a build one: module M1 clones repositories.
-RUN apt-get update \
+RUN if [ -n "$APT_MIRROR" ]; then \
+      sed -i "s|http://deb.debian.org|$APT_MIRROR|g" /etc/apt/sources.list.d/debian.sources; \
+    fi \
+    && apt-get update \
     && apt-get install -y --no-install-recommends git curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,9 +29,9 @@ RUN pip install --upgrade pip && pip install -r requirements-dev.txt
 
 COPY backend/ .
 
-# The analysis libraries (tree-sitter, networkx, sentence-transformers) are
-# deliberately NOT installed here — torch alone would add gigabytes. Add
-# `-r requirements-analysis.txt` above once modules M1–M7 need them.
+# tree-sitter and networkx come in through requirements.txt. sentence-transformers
+# (requirements-analysis.txt) is deliberately NOT installed — torch alone would
+# add gigabytes. Install it above once module M6 needs it.
 
 EXPOSE 8000
 
