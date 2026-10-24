@@ -31,7 +31,8 @@ neo4j>=5.26,<7.0
 GitPython>=3.1,<4.0
 
 # --- M2 Parsing: structural extraction ---
-tree-sitter>=0.23,<1.0
+# <0.26: 0.26.0 segfaults during garbage collection while walking a tree.
+tree-sitter>=0.25,<0.26
 tree-sitter-python>=0.23,<1.0
 tree-sitter-javascript>=0.23,<1.0
 tree-sitter-typescript>=0.23,<1.0
