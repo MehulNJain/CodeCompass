@@ -27,8 +27,6 @@ redis>=5.2,<7.0
 # --- Graph store ---
 neo4j>=5.26,<7.0
 
-# --- Vector store ---
-chromadb>=0.5,<2.0
 
 # --- Repository ingestion ---
 GitPython>=3.1,<4.0

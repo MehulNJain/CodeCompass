@@ -7,7 +7,7 @@ const stack = [
   'NetworkX',
   'PostgreSQL',
   'Neo4j',
-  'Chroma',
+  'pgvector',
 ]
 
 export function SiteFooter() {
