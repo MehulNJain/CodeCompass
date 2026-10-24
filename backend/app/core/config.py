@@ -43,11 +43,6 @@ class Settings(BaseSettings):
     neo4j_password: str = ""
     neo4j_database: str = "neo4j"
 
-    # --- Chroma ---
-    chroma_host: str = "localhost"
-    chroma_port: int = 8001
-    chroma_collection: str = "code_chunks"
-
     # --- Celery + Redis ---
     celery_broker_url: str = "redis://localhost:6379/0"
     celery_result_backend: str = "redis://localhost:6379/1"

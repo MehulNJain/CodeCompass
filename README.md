@@ -35,8 +35,8 @@ FastAPI application  ──Redis──>  Celery worker
       +──────── app/modules/ ────────+   (shared analysis pipeline)
       |
       v
-PostgreSQL  |  Neo4j  |  Chroma  |  Object/file storage
- metadata     graph     vectors    repo snapshots, exports
+PostgreSQL + pgvector  |  Neo4j  |  Object/file storage
+ metadata, vectors        graph     repo snapshots, exports
 ```
 
 ## Technology stack
@@ -51,7 +51,7 @@ on the backend is installed yet.
 | Backend / API | Python, FastAPI, Celery + Redis |
 | Analysis engine | Tree-sitter (structural parsing), NetworkX (graph + centrality) |
 | Semantic layer | sentence-transformers (code embeddings), LLM behind a model-agnostic interface |
-| Storage | PostgreSQL, Neo4j, Chroma, object storage |
+| Storage | PostgreSQL (+ pgvector for embeddings), Neo4j, object storage |
 | Tooling | Git, Docker |
 
 **NetworkX and Neo4j are not alternatives here.** NetworkX builds the graph in
@@ -74,18 +74,16 @@ CodeCompass/
 │   │   │   └── dependencies/       Shared FastAPI dependencies (db session, current user, pagination)
 │   │   ├── core/                   Config, logging, exceptions, constants, security (hashing)
 │   │   ├── db/                     Storage layer — one folder per store
-│   │   │   ├── relational/         PostgreSQL
+│   │   │   ├── relational/         PostgreSQL — also code embeddings, via pgvector
 │   │   │   │   ├── base.py         Declarative base + constraint naming
 │   │   │   │   ├── session.py      Engine and session factory (API and worker share it)
 │   │   │   │   ├── models/         ORM models — users, user_sessions, repositories,
 │   │   │   │   │                   files, tours, tour_steps, analysis_jobs (doc §13)
 │   │   │   │   ├── repositories/   Data-access layer; queries live here, not in routes
 │   │   │   │   └── migrations/     Alembic migration environment + versions/
-│   │   │   ├── graph/              Neo4j — persisted dependency/call graph
-│   │   │   │   ├── queries/        Cypher queries
-│   │   │   │   └── schema/         Constraints and indexes
-│   │   │   └── vector/             Chroma — code embeddings
-│   │   │       └── collections/    Collection definitions
+│   │   │   └── graph/              Neo4j — persisted dependency/call graph
+│   │   │       ├── queries/        Cypher queries
+│   │   │       └── schema/         Constraints and indexes
 │   │   ├── schemas/                Pydantic request/response models (the API contract)
 │   │   ├── services/               Orchestration — composes modules into use cases
 │   │   ├── modules/                The analysis pipeline (doc §10, M1–M7)
@@ -169,7 +167,7 @@ CodeCompass/
 ├── docker/
 │   ├── Dockerfile.backend          One image, two commands (API and worker)
 │   ├── Dockerfile.frontend         Vite dev server (not a production build)
-│   └── docker-compose.yml          The whole stack — 7 services
+│   └── docker-compose.yml          The whole stack — 6 services
 ├── scripts/
 │   └── dev.sh                      up / logs / stop / down / reset
 ├── .github/
@@ -278,7 +276,6 @@ Then open **http://localhost:5173**. That is the whole setup.
 | Neo4j browser | http://localhost:7474 (`neo4j` / `codecompass`) |
 | Postgres | `localhost:5432` (`codecompass` / `codecompass`) |
 | Redis | `localhost:6379` |
-| Chroma | `localhost:8001` |
 
 Database migrations run automatically when the API container starts, so there
 is no follow-up command after `up`.
@@ -355,8 +352,8 @@ it, and to `localhost:8000` otherwise, so both paths work unchanged.
   pulls in torch, which is several gigabytes. Add
   `-r requirements-analysis.txt` to `docker/Dockerfile.backend` when M2 starts.
 
-Everything else — FastAPI, SQLAlchemy, Alembic, Celery, Redis, the Neo4j and
-Chroma clients — is installed and running.
+Everything else — FastAPI, SQLAlchemy, Alembic, Celery, Redis, the Neo4j
+client — is installed and running.
 
 Record any deviation from the presented stack in `docs/decisions/`.
 
