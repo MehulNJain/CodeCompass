@@ -1,4 +1,4 @@
-import { Compass } from 'lucide-react'
+import { LogoMark } from '@/components/ui/LogoMark'
 
 const stack = [
   'React',
@@ -17,7 +17,7 @@ export function SiteFooter() {
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="flex items-center gap-2.5 font-mono text-base font-semibold">
-              <Compass className="size-5 text-accent" aria-hidden="true" />
+              <LogoMark />
               CodeCompass
             </p>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-ink-muted">

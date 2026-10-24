@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Compass, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
+import { LogoMark } from '@/components/ui/LogoMark'
 import { Button, ButtonLink } from '@/components/ui/Button'
 
 const navLinks = [
@@ -33,7 +34,7 @@ export function SiteHeader() {
           to="/"
           className="flex items-center gap-2.5 font-mono text-base font-semibold tracking-tight"
         >
-          <Compass className="size-5 text-accent" aria-hidden="true" />
+          <LogoMark />
           CodeCompass
         </Link>
 

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Compass } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { LogoMark } from '@/components/ui/LogoMark'
 import { AuthForm } from '@/features/auth/components/AuthForm'
 import type { AuthMode } from '@/features/auth/components/AuthForm'
 import { AuthAside } from '@/features/auth/components/AuthAside'
@@ -17,7 +18,7 @@ export default function LoginPage({ mode = 'signin' }: { mode?: AuthMode }) {
             to="/"
             className="flex items-center gap-2.5 font-mono text-base font-semibold tracking-tight"
           >
-            <Compass className="size-5 text-accent" aria-hidden="true" />
+            <LogoMark />
             CodeCompass
           </Link>
 

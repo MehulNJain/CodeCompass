@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import {
-  Compass,
   FolderGit2,
   LogOut,
   Menu,
@@ -11,6 +10,7 @@ import {
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { LogoMark } from '@/components/ui/LogoMark'
 import type { ReactNode } from 'react'
 import { useCurrentUser, useSignOut } from '@/features/auth/hooks/useAuth'
 
@@ -122,7 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           to="/"
           className="flex items-center gap-2.5 px-3 font-mono text-base font-semibold tracking-tight"
         >
-          <Compass className="size-5 text-accent" aria-hidden="true" />
+          <LogoMark />
           CodeCompass
         </Link>
 
@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           to="/"
           className="flex items-center gap-2.5 font-mono text-base font-semibold tracking-tight"
         >
-          <Compass className="size-5 text-accent" aria-hidden="true" />
+          <LogoMark />
           CodeCompass
         </Link>
         <button
