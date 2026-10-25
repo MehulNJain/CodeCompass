@@ -50,6 +50,35 @@ export interface RepositoryCreate {
   default_branch?: string
 }
 
+/* --- Dependency graph — backend/app/schemas/graph.py --- */
+
+export interface GraphFile {
+  id: number
+  path: string
+  language: string | null
+  /** 0–1; the most important file in the repository scores 1. */
+  importance_score: number
+  /** Files in this repository it imports. */
+  imports: number
+  /** Files in this repository that import it. */
+  imported_by: number
+}
+
+/** `source` imports `target`; both are GraphFile ids. */
+export interface GraphEdge {
+  source: number
+  target: number
+}
+
+export interface Graph {
+  repository_id: number
+  /** Null until the first analysis succeeds. */
+  commit: string | null
+  /** Most important first. */
+  files: GraphFile[]
+  edges: GraphEdge[]
+}
+
 /* --- Authentication — backend/app/schemas/auth.py --- */
 
 export interface User {

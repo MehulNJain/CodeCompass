@@ -4,11 +4,32 @@ Unscoped by owner, like `repository_repo.get_by_id`: the worker writes here,
 and routes resolve the repository with `get_owned` before reading.
 """
 
-from sqlalchemy import delete, insert
+from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 
 from app.core.constants import EdgeType
 from app.db.relational.models import File, GraphEdge
+
+
+def list_files(session: Session, repository_id: int) -> list[File]:
+    """Most important first; ties by path so the order is stable."""
+    return list(
+        session.scalars(
+            select(File)
+            .where(File.repository_id == repository_id)
+            .order_by(File.importance_score.desc(), File.path)
+        )
+    )
+
+
+def list_edges(session: Session, repository_id: int) -> list[tuple[int, int]]:
+    """(source file id, target file id) for every import edge."""
+    rows = session.execute(
+        select(GraphEdge.source_file_id, GraphEdge.target_file_id).where(
+            GraphEdge.repository_id == repository_id
+        )
+    )
+    return [(source, target) for source, target in rows]
 
 
 def replace_analysis(

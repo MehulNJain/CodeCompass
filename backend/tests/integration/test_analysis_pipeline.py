@@ -38,8 +38,13 @@ def source_repo(tmp_path: Path) -> tuple[str, str]:
 
 
 @pytest.fixture
+def client(sign_up: Callable[..., TestClient]) -> TestClient:
+    return sign_up()
+
+
+@pytest.fixture
 def submit(
-    sign_up: Callable[..., TestClient],
+    client: TestClient,
     session_factory: sessionmaker[Session],
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -61,7 +66,6 @@ def submit(
 
     monkeypatch.setattr(task, "session_scope", test_scope)
     monkeypatch.setattr(settings, "repo_storage_path", tmp_path / "clones")
-    client = sign_up()
 
     def _submit(url: str) -> tuple[int, int]:
         # The API only accepts http(s) and git@ URLs, so swap in the local one.
@@ -146,3 +150,28 @@ def test_a_crash_mid_pipeline_fails_the_job_instead_of_leaving_it_running(
         job = session.get(AnalysisJob, job_id)
     assert (job.state, job.stage) == (JobState.FAILED, "parse")
     assert job.error_message == task.UNEXPECTED_FAILURE
+
+
+def test_the_graph_endpoint_returns_ranked_files_and_edges(
+    submit: Callable[[str], tuple[int, int]],
+    source_repo: tuple[str, str],
+    client: TestClient,
+) -> None:
+    url, commit = source_repo
+    repository_id, job_id = submit(url)
+    graph_url = f"/api/v1/graph/repository/{repository_id}"
+
+    before = client.get(graph_url).json()
+    _run(repository_id, job_id)
+    graph = client.get(graph_url).json()
+
+    assert (before["commit"], before["files"], before["edges"]) == (None, [], [])
+    assert graph["commit"] == commit
+    files = {f["path"]: f for f in graph["files"]}
+    assert graph["files"][0]["path"] == "pkg/cli.py"  # most important first
+    assert graph["files"][-1]["importance_score"] == 0.0
+    assert files["pkg/core.py"]["imported_by"] == 1
+    assert files["pkg/cli.py"]["imports"] == 1
+    assert graph["edges"] == [
+        {"source": files["pkg/cli.py"]["id"], "target": files["pkg/core.py"]["id"]}
+    ]
