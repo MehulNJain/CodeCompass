@@ -39,3 +39,4 @@ tree-sitter-typescript>=0.23,<1.0
 
 # --- M3/M4 Graph and ranking ---
 networkx>=3.4,<4.0
+scipy>=1.14,<2.0   # nx.pagerank runs on scipy (and numpy, which it pulls in)
