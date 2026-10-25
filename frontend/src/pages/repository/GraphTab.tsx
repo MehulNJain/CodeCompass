@@ -21,7 +21,7 @@ function FullGraph({ graph }: { graph: Graph }) {
   return (
     <section
       aria-label="Dependency graph"
-      className="overflow-hidden rounded-xl border border-line bg-canvas lg:h-[calc(100vh-15rem)]"
+      className="overflow-hidden rounded-xl border border-line bg-canvas lg:h-[calc(100dvh-18.5rem)]"
     >
       <GraphExplorer
         files={files}
