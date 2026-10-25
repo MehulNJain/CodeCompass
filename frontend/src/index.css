@@ -48,6 +48,19 @@
 
   --color-danger: #ef4444;
 
+  /* Graph file roles. Used for icons, borders and the minimap — never for
+     text — so they only need 3:1 against the surfaces (WCAG 1.4.11). Shape
+     and icon carry the meaning too; colour only reinforces it. */
+  --color-role-entry: #22c55e;
+  --color-role-route: #38bdf8;
+  --color-role-data: #f59e0b;
+  --color-role-service: #a78bfa;
+  --color-role-config: #94a3b8;
+  --color-role-util: #2dd4bf;
+  --color-role-package: #a3a3a3;
+  --color-role-module: #d4d4d4;
+  --color-role-test: #737373;
+
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
 }
@@ -79,6 +92,15 @@
   }
 }
 
+/* Graph files arrive layer by layer (the delay is set per node), so the
+   graph reads as building from entry points down to the foundations. */
+@keyframes graph-node-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.94);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -88,6 +110,7 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }

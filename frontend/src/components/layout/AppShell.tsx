@@ -1,69 +1,36 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import {
-  FolderGit2,
-  LogOut,
-  Menu,
-  MessageSquareText,
-  Route,
-  Share2,
-  X,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
+import { FolderGit2, LogOut, Menu, X } from 'lucide-react'
 import { LogoMark } from '@/components/ui/LogoMark'
 import type { ReactNode } from 'react'
 import { useCurrentUser, useSignOut } from '@/features/auth/hooks/useAuth'
 
-type NavItem = {
-  label: string
-  to: string
-  icon: LucideIcon
-  /** Routes whose module is not built. Rendered, but not clickable. */
-  pending?: boolean
-}
-
-const navItems: NavItem[] = [
-  { label: 'Repositories', to: '/dashboard', icon: FolderGit2 },
-  { label: 'Tours', to: '/tours', icon: Route, pending: true },
-  { label: 'Graph', to: '/graph', icon: Share2, pending: true },
-  { label: 'Ask', to: '/qa', icon: MessageSquareText, pending: true },
-]
-
+/*
+ * App-level navigation is only what exists without a repository. Tours, the
+ * graph and Q&A are about one repository, so they live as tabs inside it
+ * (/repositories/:id/...) rather than as global entries that lead nowhere.
+ */
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+  const { pathname } = useLocation()
+  // A repository's workspace is part of Repositories.
+  const inRepositories =
+    pathname === '/dashboard' || pathname.startsWith('/repositories/')
+
   return (
     <nav aria-label="Sections" className="flex flex-col gap-1">
-      {navItems.map(({ label, to, icon: Icon, pending }) =>
-        pending ? (
-          <span
-            key={label}
-            aria-disabled="true"
-            title="Not built yet"
-            className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-lg px-3 text-sm text-ink-faint"
-          >
-            <Icon className="size-4 shrink-0" aria-hidden="true" />
-            {label}
-            <span className="ml-auto font-mono text-[0.625rem] tracking-wide text-ink-faint">
-              SOON
-            </span>
-          </span>
-        ) : (
-          <NavLink
-            key={label}
-            to={to}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-200 ${
-                isActive
-                  ? 'bg-surface-2 font-medium text-ink'
-                  : 'text-ink-muted hover:bg-surface hover:text-ink'
-              }`
-            }
-          >
-            <Icon className="size-4 shrink-0" aria-hidden="true" />
-            {label}
-          </NavLink>
-        ),
-      )}
+      <NavLink
+        to="/dashboard"
+        onClick={onNavigate}
+        aria-current={inRepositories ? 'page' : undefined}
+        className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-200 ${
+          inRepositories
+            ? 'bg-surface-2 font-medium text-ink'
+            : 'text-ink-muted hover:bg-surface hover:text-ink'
+        }`}
+      >
+        <FolderGit2 className="size-4 shrink-0" aria-hidden="true" />
+        Repositories
+      </NavLink>
     </nav>
   )
 }
@@ -79,7 +46,9 @@ function Account() {
       {user && (
         <div className="min-w-0 px-3 pb-2">
           <p className="truncate text-sm font-medium text-ink">{user.name}</p>
-          <p className="truncate font-mono text-xs text-ink-faint">{user.email}</p>
+          <p className="truncate font-mono text-xs text-ink-faint">
+            {user.email}
+          </p>
         </div>
       )}
       <button
