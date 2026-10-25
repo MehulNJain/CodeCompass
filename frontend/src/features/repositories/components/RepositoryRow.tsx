@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ChevronDown, GitBranch } from 'lucide-react'
+import { ArrowRight, ChevronDown, GitBranch } from 'lucide-react'
+import { ButtonLink } from '@/components/ui/Button'
 import { StatusBadge } from '@/features/repositories/components/StatusBadge'
 import { JobDetail } from '@/features/repositories/components/JobDetail'
 import { relativeTime, shortUrl } from '@/utils/format'
@@ -11,44 +12,59 @@ export function RepositoryRow({ repository }: { repository: Repository }) {
 
   return (
     <li className="overflow-hidden rounded-xl border border-line bg-surface">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        onClick={() => setExpanded((open) => !open)}
-        className="flex w-full cursor-pointer items-center gap-4 px-4 py-4 text-left transition-colors duration-200 hover:bg-surface-2 sm:px-6"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-mono text-sm font-semibold text-ink">
-            {repository.name}
-          </p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
-            <span className="truncate font-mono">
-              {shortUrl(repository.source_url)}
-            </span>
-            <span className="inline-flex items-center gap-1 font-mono text-ink-faint">
-              <GitBranch className="size-3" aria-hidden="true" />
-              {repository.default_branch}
-            </span>
-          </p>
-        </div>
+      <div className="flex items-center">
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          onClick={() => setExpanded((open) => !open)}
+          className="flex w-full cursor-pointer items-center gap-4 px-4 py-4 text-left transition-colors duration-200 hover:bg-surface-2 sm:px-6"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-mono text-sm font-semibold text-ink">
+              {repository.name}
+            </p>
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+              <span className="truncate font-mono">
+                {shortUrl(repository.source_url)}
+              </span>
+              <span className="inline-flex items-center gap-1 font-mono text-ink-faint">
+                <GitBranch className="size-3" aria-hidden="true" />
+                {repository.default_branch}
+              </span>
+            </p>
+          </div>
 
-        <div className="hidden text-right text-xs text-ink-faint sm:block">
-          <p>analysed</p>
-          <p className="mt-0.5 text-ink-muted">
-            {relativeTime(repository.last_analyzed_at)}
-          </p>
-        </div>
+          <div className="hidden text-right text-xs text-ink-faint sm:block">
+            <p>analysed</p>
+            <p className="mt-0.5 text-ink-muted">
+              {relativeTime(repository.last_analyzed_at)}
+            </p>
+          </div>
 
-        <StatusBadge status={repository.status} />
+          <StatusBadge status={repository.status} />
 
-        <ChevronDown
-          className={`size-4 shrink-0 text-ink-faint transition-transform duration-200 ${
-            expanded ? 'rotate-180' : ''
-          }`}
-          aria-hidden="true"
-        />
-      </button>
+          <ChevronDown
+            className={`size-4 shrink-0 text-ink-faint transition-transform duration-200 ${
+              expanded ? 'rotate-180' : ''
+            }`}
+            aria-hidden="true"
+          />
+        </button>
+
+        {/* Beside the row's button, not inside it — a link in a button is invalid. */}
+        {repository.last_analyzed_commit && (
+          <ButtonLink
+            to={`/repositories/${repository.id}`}
+            variant="ghost"
+            className="mr-2 sm:mr-4"
+            aria-label={`Open ${repository.name}`}
+          >
+            Open
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </ButtonLink>
+        )}
+      </div>
 
       {expanded && (
         <div id={panelId}>
