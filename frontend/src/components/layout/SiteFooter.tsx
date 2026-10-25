@@ -2,6 +2,7 @@ import { LogoMark } from '@/components/ui/LogoMark'
 
 const stack = [
   'React',
+  'React Flow',
   'FastAPI',
   'Tree-sitter',
   'NetworkX',
