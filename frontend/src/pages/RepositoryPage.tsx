@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   AlertCircle,
   ArrowLeft,
@@ -14,6 +14,7 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { StatusBadge } from '@/features/repositories/components/StatusBadge'
+import { DeleteRepositoryButton } from '@/features/repositories/components/DeleteRepositoryButton'
 import { DependencyGraph } from '@/features/graph/components/DependencyGraph'
 import { StartHereList } from '@/features/graph/components/StartHereList'
 import {
@@ -75,6 +76,7 @@ function Header({
   fileCount: number | undefined
 }) {
   const reanalyse = useSubmitRepository()
+  const navigate = useNavigate()
   const busy =
     repository.status === 'queued' || repository.status === 'analyzing'
 
@@ -107,22 +109,29 @@ function Header({
         </p>
       </div>
 
-      <Button
-        variant="outline"
-        disabled={busy || reanalyse.isPending}
-        onClick={() =>
-          reanalyse.mutate({
-            source_url: repository.source_url,
-            default_branch: repository.default_branch,
-          })
-        }
-      >
-        <RefreshCw
-          className={`size-4 ${busy ? 'animate-spin' : ''}`}
-          aria-hidden="true"
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          disabled={busy || reanalyse.isPending}
+          onClick={() =>
+            reanalyse.mutate({
+              source_url: repository.source_url,
+              default_branch: repository.default_branch,
+            })
+          }
+        >
+          <RefreshCw
+            className={`size-4 ${busy ? 'motion-safe:animate-spin' : ''}`}
+            aria-hidden="true"
+          />
+          {busy ? 'Analysing…' : 'Re-analyse'}
+        </Button>
+        <DeleteRepositoryButton
+          repository={repository}
+          showLabel
+          onDeleted={() => navigate('/dashboard')}
         />
-        {busy ? 'Analysing…' : 'Re-analyse'}
-      </Button>
+      </div>
     </header>
   )
 }
@@ -147,6 +156,7 @@ function Body({
     ) : (
       <EmptyState
         icon={Loader2}
+        iconClassName="motion-safe:animate-spin"
         title="Analysing…"
         description="Cloning, parsing, and ranking. This page fills in by itself when it is done."
       />

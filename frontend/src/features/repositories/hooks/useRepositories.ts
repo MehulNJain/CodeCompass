@@ -80,3 +80,21 @@ export function useRepositoryGraph(id: number, commit: string | null) {
     enabled: commit !== null,
   })
 }
+
+export function useDeleteRepository() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => repositoriesApi.remove(id),
+    // Drop the deleted repository's own queries rather than refetching them
+    // into a 404 — but only unwatched ones, so the page it was deleted from
+    // does not flash an error before it navigates away. Only the list needs
+    // to come back.
+    onSuccess: (_, id) => {
+      queryClient.removeQueries({
+        queryKey: repositoryKeys.detail(id),
+        type: 'inactive',
+      })
+      queryClient.invalidateQueries({ queryKey: repositoryKeys.list() })
+    },
+  })
+}

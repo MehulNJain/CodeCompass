@@ -19,6 +19,9 @@ export const repositoriesApi = {
 
   latestJob: (id: number) => api.get<Job>(`/repositories/${id}/job`),
 
+  /** Also cancels an analysis that is still queued or running. */
+  remove: (id: number) => api.delete(`/repositories/${id}`),
+
   /** Ranked files and import edges; empty until the first analysis succeeds. */
   graph: (id: number) => api.get<Graph>(`/graph/repository/${id}`),
 }

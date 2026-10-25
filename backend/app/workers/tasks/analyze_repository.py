@@ -6,7 +6,9 @@ reached. Each stage is recorded on the job as it starts, so a failure shows
 where it happened.
 """
 
+import shutil
 from dataclasses import dataclass
+from pathlib import Path
 
 import networkx as nx
 
@@ -67,6 +69,11 @@ def analyze_repository(self, repository_id: int, job_id: int) -> dict:
         logger.warning("analysis failed repository_id=%s: %s", repository_id, exc)
         return {"ok": False, "reason": exc.message}
     except Exception:
+        with session_scope() as session:
+            deleted = repository_repo.get_by_id(session, repository_id) is None
+        if deleted:
+            # Deleting removes the clone under us, so a crash here is expected.
+            return _deleted_midway(repository_id)
         # Anything else is a bug; without this the job would sit at RUNNING.
         _fail(repository_id, job_id, UNEXPECTED_FAILURE)
         logger.exception("analysis crashed repository_id=%s", repository_id)
@@ -74,6 +81,9 @@ def analyze_repository(self, repository_id: int, job_id: int) -> dict:
 
     # One transaction: the new files, edges, and status appear together.
     with session_scope() as session:
+        repository = repository_repo.get_by_id(session, repository_id)
+        if repository is None:
+            return _deleted_midway(repository_id)
         file_repo.replace_analysis(
             session,
             repository_id,
@@ -83,11 +93,9 @@ def analyze_repository(self, repository_id: int, job_id: int) -> dict:
             ],
             edges=list(result.graph.edges),
         )
-        repository = repository_repo.get_by_id(session, repository_id)
-        if repository is not None:
-            repository_repo.mark_analyzed(
-                session, repository, commit=result.inventory.commit
-            )
+        repository_repo.mark_analyzed(
+            session, repository, commit=result.inventory.commit
+        )
         job = repository_repo.get_job(session, job_id)
         if job is not None:
             repository_repo.mark_job_finished(session, job, state=JobState.SUCCEEDED)
@@ -105,14 +113,25 @@ def _run_pipeline(
     repository_id: int, job_id: int, source_url: str, branch: str
 ) -> _Result:
     """M1–M4. Modules never touch the database; this only records the stage."""
-    dest = settings.repo_storage_path / str(repository_id)
-    inventory = clone_and_inventory(source_url, dest, branch)
+    inventory = clone_and_inventory(source_url, _clone_path(repository_id), branch)
     _set_stage(job_id, "parse")
     parsed = parse_files(inventory)
     _set_stage(job_id, "build_graph")
     graph = build_graph(parsed)
     _set_stage(job_id, "rank")
     return _Result(inventory, graph, rank(graph))
+
+
+def _deleted_midway(repository_id: int) -> dict:
+    """The repository was deleted while we worked and the cancel did not reach
+    us: save nothing and remove the clone."""
+    shutil.rmtree(_clone_path(repository_id), ignore_errors=True)
+    logger.info("repository %s deleted mid-analysis", repository_id)
+    return {"ok": False, "reason": "repository deleted"}
+
+
+def _clone_path(repository_id: int) -> Path:
+    return settings.repo_storage_path / str(repository_id)
 
 
 def _set_stage(job_id: int, stage: str) -> None:

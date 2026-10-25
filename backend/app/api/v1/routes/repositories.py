@@ -54,6 +54,14 @@ def get_repository(
     return RepositoryRead.model_validate(repository)
 
 
+@router.delete("/{repository_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_repository(
+    repository_id: int, user: CurrentUserDep, session: SessionDep
+) -> None:
+    """Removes the repository and its analysis, and cancels a running one."""
+    repository_service.delete_repository(session, repository_id, owner_id=user.id)
+
+
 @router.get("/{repository_id}/job", response_model=JobRead)
 def latest_job(
     repository_id: int, user: CurrentUserDep, session: SessionDep

@@ -16,6 +16,10 @@ const GAP_X = 16
 const ROW_HEIGHT = 76
 const PER_LINE = 5 // a wide layer wraps onto several lines
 
+const reduceMotion = window.matchMedia(
+  '(prefers-reduced-motion: reduce)',
+).matches
+
 /*
  * The import graph, layered: a file sits one row above the deepest file it
  * imports, so entry points end up on top and the foundations everything
@@ -74,7 +78,7 @@ export function DependencyGraph({
       id: `${edge.source}-${edge.target}`,
       source: String(edge.source),
       target: String(edge.target),
-      animated: lit,
+      animated: lit && !reduceMotion,
       zIndex: lit ? 1 : 0,
       style: {
         stroke: colour,

@@ -175,3 +175,79 @@ def test_the_graph_endpoint_returns_ranked_files_and_edges(
     assert graph["edges"] == [
         {"source": files["pkg/cli.py"]["id"], "target": files["pkg/core.py"]["id"]}
     ]
+
+
+# --- deleting ------------------------------------------------------------------
+
+
+def test_deleting_removes_the_analysis_and_the_clone(
+    submit: Callable[[str], tuple[int, int]],
+    source_repo: tuple[str, str],
+    client: TestClient,
+    session_factory: sessionmaker[Session],
+) -> None:
+    repository_id, job_id = submit(source_repo[0])
+    _run(repository_id, job_id)
+    clone = settings.repo_storage_path / str(repository_id)
+    assert clone.is_dir()
+
+    assert client.delete(f"/api/v1/repositories/{repository_id}").status_code == 204
+
+    assert client.get(f"/api/v1/repositories/{repository_id}").status_code == 404
+    assert client.get("/api/v1/repositories").json()["total"] == 0
+    assert not clone.exists()
+    with session_factory() as session:
+        for model in (AnalysisJob, File, GraphEdge):
+            assert session.scalar(select(model).limit(1)) is None
+
+
+def test_you_cannot_delete_another_users_repository(
+    submit: Callable[[str], tuple[int, int]],
+    sign_up: Callable[..., TestClient],
+    client: TestClient,
+) -> None:
+    repository_id, _ = submit("https://example.com/a/b")
+    grace = sign_up("grace@example.com")
+
+    assert grace.delete(f"/api/v1/repositories/{repository_id}").status_code == 404
+    assert client.get(f"/api/v1/repositories/{repository_id}").status_code == 200
+
+
+def test_deleting_cancels_an_unfinished_analysis(
+    submit: Callable[[str], tuple[int, int]],
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    revoked: list[list[str]] = []
+    monkeypatch.setattr(
+        task.celery_app.control, "revoke", lambda ids, **_: revoked.append(ids)
+    )
+    repository_id, _ = submit("https://example.com/a/b")  # queued, never run
+
+    client.delete(f"/api/v1/repositories/{repository_id}")
+
+    assert revoked == [["test-task"]]
+
+
+def test_a_repository_deleted_mid_analysis_gets_nothing_saved(
+    submit: Callable[[str], tuple[int, int]],
+    source_repo: tuple[str, str],
+    client: TestClient,
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository_id, job_id = submit(source_repo[0])
+    real_parse = task.parse_files
+
+    def delete_then_parse(inventory: object) -> object:
+        # The cancel "missed": the task keeps going after the delete.
+        monkeypatch.setattr(task.celery_app.control, "revoke", lambda *a, **k: None)
+        client.delete(f"/api/v1/repositories/{repository_id}")
+        return real_parse(inventory)
+
+    monkeypatch.setattr(task, "parse_files", delete_then_parse)
+
+    assert _run(repository_id, job_id) == {"ok": False, "reason": "repository deleted"}
+    assert not (settings.repo_storage_path / str(repository_id)).exists()
+    with session_factory() as session:
+        assert session.scalar(select(File).limit(1)) is None

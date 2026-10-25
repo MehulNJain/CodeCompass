@@ -64,7 +64,7 @@ export function StartHereList({
                       }}
                     />
                   </span>
-                  <span className="shrink-0 font-mono text-[0.6875rem] text-ink-muted">
+                  <span className="shrink-0 font-mono text-xs text-ink-muted">
                     imported by {file.imported_by}
                   </span>
                 </span>

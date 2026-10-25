@@ -62,7 +62,7 @@ export function JobDetail({ repositoryId }: { repositoryId: number }) {
               {failedHere ? (
                 <AlertCircle className="size-3" aria-hidden="true" />
               ) : running ? (
-                <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+                <Loader2 className="size-3 motion-safe:animate-spin" aria-hidden="true" />
               ) : done ? (
                 <Check className="size-3" aria-hidden="true" />
               ) : null}

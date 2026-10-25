@@ -3,6 +3,7 @@ import { ArrowRight, ChevronDown, GitBranch } from 'lucide-react'
 import { ButtonLink } from '@/components/ui/Button'
 import { StatusBadge } from '@/features/repositories/components/StatusBadge'
 import { JobDetail } from '@/features/repositories/components/JobDetail'
+import { DeleteRepositoryButton } from '@/features/repositories/components/DeleteRepositoryButton'
 import { relativeTime, shortUrl } from '@/utils/format'
 import type { Repository } from '@/types/api'
 
@@ -12,7 +13,7 @@ export function RepositoryRow({ repository }: { repository: Repository }) {
 
   return (
     <li className="overflow-hidden rounded-xl border border-line bg-surface">
-      <div className="flex items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center">
         <button
           type="button"
           aria-expanded={expanded}
@@ -52,18 +53,22 @@ export function RepositoryRow({ repository }: { repository: Repository }) {
           />
         </button>
 
-        {/* Beside the row's button, not inside it — a link in a button is invalid. */}
-        {repository.last_analyzed_commit && (
-          <ButtonLink
-            to={`/repositories/${repository.id}`}
-            variant="ghost"
-            className="mr-2 sm:mr-4"
-            aria-label={`Open ${repository.name}`}
-          >
-            Open
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </ButtonLink>
-        )}
+        {/* Beside the row's button, not inside it — a link in a button is
+            invalid. On a phone they get their own line, so nothing is pushed
+            off the edge. */}
+        <div className="flex items-center justify-end gap-1 border-t border-line px-2 py-1 sm:border-0 sm:py-0 sm:pr-4 sm:pl-0">
+          {repository.last_analyzed_commit && (
+            <ButtonLink
+              to={`/repositories/${repository.id}`}
+              variant="ghost"
+              aria-label={`Open ${repository.name}`}
+            >
+              Open
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </ButtonLink>
+          )}
+          <DeleteRepositoryButton repository={repository} />
+        </div>
       </div>
 
       {expanded && (
