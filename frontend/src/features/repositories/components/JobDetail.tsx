@@ -6,9 +6,8 @@ import { relativeTime } from '@/utils/format'
 
 /*
  * The expanded row. Shows where the worker got to in the pipeline, and — when
- * a job failed — the message the worker actually recorded. Surfacing the real
- * error is the point: right now every job fails because modules M1–M7 are not
- * built, and the message says exactly that.
+ * a job failed — the message the worker actually recorded. A succeeded job
+ * ends on its last real stage; the ones after it (not built yet) stay grey.
  */
 export function JobDetail({ repositoryId }: { repositoryId: number }) {
   const { data: job, isPending, isError, error } = useRepositoryJob(
@@ -41,7 +40,9 @@ export function JobDetail({ repositoryId }: { repositoryId: number }) {
     <div className="border-t border-line bg-canvas px-4 py-4 sm:px-6">
       <ol className="flex flex-wrap gap-x-2 gap-y-2">
         {PIPELINE_STAGES.map((stage, index) => {
-          const done = reachedIndex > index
+          const done =
+            reachedIndex > index ||
+            (reachedIndex === index && job.state === 'succeeded')
           const current = reachedIndex === index
           const running = current && job.state === 'running'
           const failedHere = current && job.state === 'failed'
@@ -61,7 +62,7 @@ export function JobDetail({ repositoryId }: { repositoryId: number }) {
               {failedHere ? (
                 <AlertCircle className="size-3" aria-hidden="true" />
               ) : running ? (
-                <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+                <Loader2 className="size-3 motion-safe:animate-spin" aria-hidden="true" />
               ) : done ? (
                 <Check className="size-3" aria-hidden="true" />
               ) : null}

@@ -14,6 +14,7 @@ Two kinds of lookup, deliberately named apart:
 
 from datetime import UTC, datetime
 
+from sqlalchemy import delete as sql_delete
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -83,12 +84,25 @@ def create(
     return repository
 
 
+def delete(session: Session, repository_id: int) -> None:
+    """Jobs, files, edges, and tours go with it: every foreign key to
+    `repositories` is ON DELETE CASCADE, so the database does it in one go."""
+    session.execute(sql_delete(Repository).where(Repository.id == repository_id))
+
+
 def set_status(
     session: Session, repository: Repository, status: RepositoryStatus
 ) -> Repository:
     repository.status = status
     session.flush()
     return repository
+
+
+def mark_analyzed(session: Session, repository: Repository, *, commit: str) -> None:
+    repository.status = RepositoryStatus.READY
+    repository.last_analyzed_commit = commit
+    repository.last_analyzed_at = datetime.now(UTC)
+    session.flush()
 
 
 # --- analysis jobs -----------------------------------------------------------
@@ -126,6 +140,18 @@ def latest_job_for_repository(
         .where(AnalysisJob.repository_id == repository_id)
         .order_by(AnalysisJob.created_at.desc())
         .limit(1)
+    )
+
+
+def unfinished_task_ids(session: Session, repository_id: int) -> list[str]:
+    """Celery task ids of this repository's queued or running jobs."""
+    return list(
+        session.scalars(
+            select(AnalysisJob.task_id)
+            .where(AnalysisJob.repository_id == repository_id)
+            .where(AnalysisJob.state.in_((JobState.PENDING, JobState.RUNNING)))
+            .where(AnalysisJob.task_id.is_not(None))
+        )
     )
 
 

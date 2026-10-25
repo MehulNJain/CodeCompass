@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
+import RepositoryPage from '@/pages/RepositoryPage'
 import { RedirectIfSignedIn, RequireAuth } from '@/routes/guards'
 
 export function AppRoutes() {
@@ -16,6 +17,7 @@ export function AppRoutes() {
 
       <Route element={<RequireAuth />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/repositories/:id" element={<RepositoryPage />} />
       </Route>
     </Routes>
   )

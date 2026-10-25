@@ -39,7 +39,7 @@ export function StatusBadge({ status }: { status: RepositoryStatus }) {
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-xs ${className}`}
     >
       <Icon
-        className={`size-3.5 ${spin ? 'animate-spin' : ''}`}
+        className={`size-3.5 ${spin ? 'motion-safe:animate-spin' : ''}`}
         aria-hidden="true"
       />
       {label}

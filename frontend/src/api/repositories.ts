@@ -1,5 +1,11 @@
 import { api } from '@/api/client'
-import type { Job, Page, Repository, RepositoryCreate } from '@/types/api'
+import type {
+  Graph,
+  Job,
+  Page,
+  Repository,
+  RepositoryCreate,
+} from '@/types/api'
 
 export const repositoriesApi = {
   list: (limit = 20, offset = 0) =>
@@ -12,4 +18,10 @@ export const repositoriesApi = {
     api.post<Job>('/repositories', payload),
 
   latestJob: (id: number) => api.get<Job>(`/repositories/${id}/job`),
+
+  /** Also cancels an analysis that is still queued or running. */
+  remove: (id: number) => api.delete(`/repositories/${id}`),
+
+  /** Ranked files and import edges; empty until the first analysis succeeds. */
+  graph: (id: number) => api.get<Graph>(`/graph/repository/${id}`),
 }

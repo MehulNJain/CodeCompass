@@ -24,16 +24,15 @@ export default function DashboardPage() {
         </div>
 
         {/*
-          Honest about the current state. Submitting really does queue a job and
-          a real worker really does pick it up — it then fails, because modules
-          M1–M7 are not written. Remove this notice when the pipeline lands.
+          Honest about the current state: M1–M4 run for real, M5–M6 do not
+          exist yet. Remove this notice when the pipeline is complete.
         */}
         <p className="mt-4 flex items-start gap-2.5 rounded-lg border border-line bg-surface px-3.5 py-3 text-xs leading-relaxed text-ink-muted">
           <Info className="mt-px size-4 shrink-0 text-ink-faint" aria-hidden="true" />
           <span>
-            The queue is live, the analysis is not. Submitting reaches the
-            worker, which currently stops at the first stage — modules M1–M7 are
-            still being built. Expand a row to see exactly where it stopped.
+            Analysis runs up to ranking: each repository is cloned, parsed, and
+            its files ranked by how central they are. Embeddings, tours, and
+            explanations are still being built. Expand a row to see each stage.
           </span>
         </p>
 

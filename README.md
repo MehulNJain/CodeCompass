@@ -42,8 +42,9 @@ PostgreSQL + pgvector  |  Neo4j  |  Object/file storage
 ## Technology stack
 
 As presented. On the frontend, React, TypeScript, Vite, Tailwind,
-`react-router-dom`, and `lucide-react` are installed; React Flow is not. Nothing
-on the backend is installed yet.
+`react-router-dom`, and `lucide-react` are installed; React Flow is not. On the
+backend everything is installed except `sentence-transformers` (see "Not yet
+installed" below).
 
 | Layer | Stack |
 |---|---|
@@ -114,8 +115,8 @@ CodeCompass/
 │   │   └── exports/                Generated tour exports
 │   ├── alembic.ini                 Migration config (URL comes from settings, not here)
 │   ├── pyproject.toml              Ruff and pytest config — dependencies are NOT here
-│   ├── requirements.txt            API + worker runtime
-│   ├── requirements-analysis.txt   tree-sitter / networkx / sentence-transformers (M1–M7)
+│   ├── requirements.txt            API + worker runtime, incl. tree-sitter and networkx
+│   ├── requirements-analysis.txt   sentence-transformers (M6) — heavy, not in the image yet
 │   └── requirements-dev.txt        pytest, ruff
 │
 ├── frontend/                       React 19 + TypeScript + Vite + Tailwind CSS v4
@@ -346,11 +347,11 @@ it, and to `localhost:8000` otherwise, so both paths work unchanged.
 
 - **Frontend:** `reactflow`, for the graph view (F7). Everything else is
   installed — `react-router-dom`, `lucide-react`, `@tanstack/react-query`.
-- **Backend analysis libraries** — `tree-sitter`, `networkx`, and
-  `sentence-transformers` are listed in `backend/requirements-analysis.txt` but
-  are deliberately **not** in the Docker image yet: `sentence-transformers`
-  pulls in torch, which is several gigabytes. Add
-  `-r requirements-analysis.txt` to `docker/Dockerfile.backend` when M2 starts.
+- **`sentence-transformers`** (M6 embeddings) is listed in
+  `backend/requirements-analysis.txt` but is deliberately **not** in the Docker
+  image yet: it pulls in torch, which is several gigabytes. Add
+  `-r requirements-analysis.txt` to `docker/Dockerfile.backend` when M6 starts.
+  `tree-sitter` and `networkx` are light and already installed.
 
 Everything else — FastAPI, SQLAlchemy, Alembic, Celery, Redis, the Neo4j
 client — is installed and running.

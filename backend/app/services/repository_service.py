@@ -7,10 +7,12 @@ Every function takes the caller's `owner_id`. Someone else's repository is
 reported as not found, never as forbidden — a 403 would confirm it exists.
 """
 
+import shutil
 from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.constants import RepositoryStatus
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
@@ -81,6 +83,30 @@ def get_repository(
     if repository is None:
         raise NotFoundError(f"No repository with id {repository_id}.")
     return repository
+
+
+def delete_repository(session: Session, repository_id: int, *, owner_id: int) -> None:
+    """Delete the repository, its analysis, and its clone, and cancel any
+    analysis still queued or running. The worker also checks the repository
+    still exists before it saves, so a task that slips past the cancel writes
+    nothing."""
+    get_repository(session, repository_id, owner_id=owner_id)
+    task_ids = repository_repo.unfinished_task_ids(session, repository_id)
+    repository_repo.delete(session, repository_id)
+    session.commit()
+
+    if task_ids:
+        from app.workers.celery_app import celery_app
+
+        try:
+            # terminate: a running task is killed, not just skipped if queued.
+            celery_app.control.revoke(task_ids, terminate=True)
+        except Exception:
+            # Broker down: the worker's existence check still covers it.
+            logger.warning("could not revoke %s", task_ids, exc_info=True)
+
+    shutil.rmtree(settings.repo_storage_path / str(repository_id), ignore_errors=True)
+    logger.info("deleted repository_id=%s cancelled=%s", repository_id, task_ids)
 
 
 def get_job(session: Session, job_id: int, *, owner_id: int) -> AnalysisJob:

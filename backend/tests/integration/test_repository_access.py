@@ -53,7 +53,7 @@ def test_resubmitting_your_own_url_requeues_the_same_row(sign_up: SignUp) -> Non
         ("GET", "/api/v1/repositories/{repository_id}/job", 200),
         ("GET", "/api/v1/jobs/{job_id}", 200),
         ("GET", "/api/v1/tours/repository/{repository_id}", 501),
-        ("GET", "/api/v1/graph/repository/{repository_id}", 501),
+        ("GET", "/api/v1/graph/repository/{repository_id}", 200),
         ("POST", "/api/v1/qa/repository/{repository_id}", 501),
     ],
 )
