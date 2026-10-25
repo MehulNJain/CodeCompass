@@ -91,6 +91,13 @@ def set_status(
     return repository
 
 
+def mark_analyzed(session: Session, repository: Repository, *, commit: str) -> None:
+    repository.status = RepositoryStatus.READY
+    repository.last_analyzed_commit = commit
+    repository.last_analyzed_at = datetime.now(UTC)
+    session.flush()
+
+
 # --- analysis jobs -----------------------------------------------------------
 
 
