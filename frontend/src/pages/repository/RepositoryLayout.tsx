@@ -60,7 +60,8 @@ export default function RepositoryLayout() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl">
+      {/* The workspace takes the full width — the graph needs it. */}
+      <div className="mx-auto max-w-[120rem]">
         <nav aria-label="Breadcrumb">
           <ol className="flex min-w-0 items-center gap-1.5 text-sm text-ink-muted">
             <li>

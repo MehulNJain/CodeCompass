@@ -33,7 +33,7 @@ function StartHere({ graph }: { graph: Graph }) {
           Ranked by how much of the codebase depends on each file. Select one to
           see its connections.
         </p>
-        <div className="mt-3 max-h-[36rem] overflow-y-auto pr-1 lg:max-h-[calc(100vh-20rem)]">
+        <div className="mt-3 max-h-[36rem] overflow-y-auto pr-1 lg:max-h-[calc(100dvh-23rem)]">
           <StartHereList
             files={files}
             selectedId={selectedId}
@@ -44,7 +44,7 @@ function StartHere({ graph }: { graph: Graph }) {
 
       <section
         aria-label="Dependency graph of these files"
-        className="h-[32rem] min-w-0 overflow-hidden rounded-xl border border-line bg-canvas lg:h-[calc(100vh-16rem)]"
+        className="h-[32rem] min-w-0 overflow-hidden rounded-xl border border-line bg-canvas lg:h-[calc(100dvh-18.5rem)]"
       >
         <GraphExplorer
           files={files}
